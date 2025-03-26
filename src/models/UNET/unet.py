@@ -125,7 +125,7 @@ class MiniUnet(nn.Module):
 
         self.final_layer = nn.Conv2d(32, num_classes, kernel_size=1)
 
-        self.out = nn.Softmax(dim=1) # softmax accross class dimension
+        # self.out = nn.Softmax(dim=1) # softmax accross class dimension
 
 
 
@@ -152,12 +152,9 @@ class MiniUnet(nn.Module):
         up_3 = self.up3(up_2, down_1)
 
 
-        scores = self.final_layer(up_3)
+        logits = self.final_layer(up_3)
 
-        output = self.out(scores)
-
-
-        return output
+        return logits
 
 
 
