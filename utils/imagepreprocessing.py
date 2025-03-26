@@ -12,5 +12,11 @@ def compute_indices(image):
     
     return ndvi, ndwi
 
+def normalize_band(band):
 
+    min_vals = band.min( keepdims=True)
+    max_vals = band.max( keepdims=True)
+    normalized_band = (band - min_vals) / (max_vals - min_vals)
+
+    return normalized_band
 

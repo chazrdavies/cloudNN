@@ -24,7 +24,7 @@ def show_sample(image, mask):
 
 
     # Overlay mask (sum of all classes for visualization)
-    mask_overlay = mask.sum(axis=0)  
+    mask_overlay = mask.argmax(axis=0)  
     axes[4].imshow(mask_overlay, cmap='gray')
     axes[4].set_title("Segmentation Mask")
 
@@ -39,18 +39,28 @@ def show_sample(image, mask):
 
 
     plt.show()
-    plt.show()
+
 
 def check_label(label):
     print("Label Shape :" ,  label.shape)
+    # Overlay mask (sum of all classes for visualization)
+    plt.imshow(label, cmap='gray')
+    plt.title("Segmentation Mask")
+    plt.show()
+
+    return
+    
+
+
 
 def check_image(image):
-
+    print(f"Image shape {image.shape}")
     print("Max: ", torch.max(image[0]))
     print("Min: ", torch.min(image[0]))
-    rgb_nir = image[0]
+    
+    # rgb_nir = image[0]
 
-    rgb_image = rgb_nir[:3]  # This takes the first 3 channels (Red, Green, Blue)
+    rgb_image = image[:3]  # This takes the first 3 channels (Red, Green, Blue)
 
     # Reorder the channels to match the expected shape (Height, Width, Channels)
     rgb_image = torch.permute(rgb_image, (1, 2, 0))
@@ -58,19 +68,11 @@ def check_image(image):
     plt.imshow(rgb_image)
     plt.title("RGB Image")
     plt.show()
-# for images, masks in train_loader:
-#     # Skip any batches with None values
-#     if images is None or masks is None:
-#         print("Skipping batch with invalid data.")
-#         continue
-#     image = torch.Tensor.numpy(images[2])  # Convert tensor to numpy
-#     mask = torch.Tensor.numpy(masks[2])
-#     show_sample(image, mask)
-#     break
-# Get a sample from the data loader
-# Create the data loader
 
-train_loader, test_loader = make_data_loader(image_dir, mask_dir, batch_size=3)
+    return
+
+
+train_loader, test_loader = make_data_loader(image_dir, mask_dir, batch_size=10)
 
 # Fetch one batch
 # for images, masks in train_loader:
@@ -81,4 +83,6 @@ train_loader, test_loader = make_data_loader(image_dir, mask_dir, batch_size=3)
 batch = next(iter(train_loader))  # Get a batch
 inputs, labels = batch
 
-check_image(inputs)
+for i in range(3):
+    check_label(labels[i])
+    check_image(inputs[i])

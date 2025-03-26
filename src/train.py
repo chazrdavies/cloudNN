@@ -15,12 +15,6 @@ import utils.config as config
 
 
 
-# import tensorboard ?
-
-IMG_DIR = 'data/sparcs_data_L8/images'
-MASK_DIR = 'data/sparcs_data_L8/masks'
-
-
 
 
 def train_one_epoch(model, data_loader, epoch_idx, tb_writer, criterion, optimizer):
@@ -30,6 +24,11 @@ def train_one_epoch(model, data_loader, epoch_idx, tb_writer, criterion, optimiz
     for i, data in enumerate(data_loader):
         
         inputs, labels = data
+
+        
+        inputs = inputs.to(device)   # Move inputs to the same device as the model
+        labels = labels.to(device)   # Move labels to the same device as the model
+
 
         
         optimizer.zero_grad()
@@ -82,6 +81,9 @@ def train(model, data_loader, val_loader, num_epochs, criterion, optimizer):
             for i, val_data in enumerate(val_loader):
 
                 val_inputs, val_labels = val_data
+                val_inputs = val_inputs.to(device)   # Move inputs to the same device as the model
+                val_labels = val_labels.to(device)   # Move labels to the same device as the model
+
                 val_outputs = model(val_inputs)
                 val_loss = criterion(val_outputs, val_labels)
 
@@ -137,9 +139,8 @@ if __name__ == "__main__":
     model = unet.MiniUnet(in_channels=config.RGB_NIR_CHANNELS, num_classes=config.NUM_CLASSES).to(device)
     
     for param in model.parameters():
-        if param.dim() > 1:  # Check if it's a weight (not a bias)
-            torch.nn.init.normal_(param, mean=0.0, std=1.0)
-
+        if param.dim() > 1:  
+            torch.nn.init.kaiming_normal_(param)
 
     train_loader, val_loader = dataset.make_data_loader(config.IMAGE_DIR, config.MASK_DIR, batch_size=config.BATCH_SIZE, train_ratio=config.TRAIN_SPLIT)
     
@@ -155,9 +156,9 @@ if __name__ == "__main__":
     train(model,train_loader,val_loader,num_epochs=config.NUM_EPOCHS, criterion= criterion, optimizer= optimizer)
 
 
-    print(f"Training took {((datetime.time() - start_t)/60.0):.2f} minutes")
+    print(f"Training took {((datetime.now().time() - start_t)/60.0):.2f} minutes")
 
-    model_path = "../results/mini_unet_v1.pth"
+    model_path = "results/mini_unet_v1.pth"
 
     torch.save(model.state_dict(), model_path)
     print(f"Model state dictionary saved to {model_path}")

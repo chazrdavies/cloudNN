@@ -8,7 +8,7 @@ dataLoader,_ = src.SatelliteSegmentationDataset.make_data_loader(config.IMAGE_DI
 batch = next(iter(dataLoader))  # Get a batch
 inputs, labels = batch
 
-test_model = MiniUnet(4, 2)
+test_model = MiniUnet(4, 4)
 
 outputs = test_model(inputs)
 

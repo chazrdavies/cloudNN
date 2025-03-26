@@ -111,11 +111,12 @@ class MiniUnet(nn.Module):
 
 
 
-        self.down1 = DownSample(in_channels, 32)
+        self.down1 = DownSample(self.in_channels, 32)
         self.down2 = DownSample(32, 64)
         self.down3 = DownSample(64, 128)
 
         self.bottle_neck = DoubleConv(128, 256)
+        ## should i add a pooling after bottleneck?
 
         self.up1 = UpSample(256, 128)
         self.up2 = UpSample(128, 64)

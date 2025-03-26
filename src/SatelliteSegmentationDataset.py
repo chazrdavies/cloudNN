@@ -8,6 +8,8 @@ import rasterio
 
 import random
 
+from utils.imagepreprocessing import normalize_band
+
 
 
 
@@ -33,50 +35,7 @@ class SatelliteSegmentationDataset(Dataset):
     def __len__(self):
         return len(self.image_filenames)
     
-    # def __getitem__(self, idx):
-    #     img_path = os.path.join(self.image_dir, self.image_filenames[idx])
-    #     mask_path = os.path.join(self.mask_dir, self.mask_filenames[idx])
 
-        
-
-    #     with rasterio.open(img_path) as src:
-    #         blue = src.read(2)
-    #         green = src.read(3)
-    #         red = src.read(4)
-    #         nir = src.read(5)
-
-    #         image = np.stack([red, green, blue, nir],axis=-1)
-    #         image = image.astype(np.float32)
-
-    #         min_vals = image.min(axis=(0, 1), keepdims=True)  # Get min per channel
-    #         max_vals = image.max(axis=(0, 1), keepdims=True)  # Get max per channel
-    #         image = (image - min_vals) / (max_vals - min_vals + 1e-6)
-        
-
-    #     # create mask for land water and cloud
-    #     with rasterio.open(mask_path) as src:
-    #         label = src.read().astype(np.int8) # labels
-    #         cloud = ((label == 5) | (label == 0) | (label == 1)).astype(np.int8)
-    #         water = ((label == 2) |(label == 6)).astype(np.int8)
-    #         land = (label == 4).astype(np.int8)
-    #         snow = (label == 3).astype(np.int8)
-
-    #         mask = np.stack([cloud, water, land, snow], axis=0)  # Channel-first format for PyTorch
-
-
-
-    #     if self.transform:
-    #         image = self.transform(image)
-            
-            
-    #     mask = torch.tensor(mask, dtype=torch.long)
-
-    #     if self.augmentations:
-    #             seed = np.random.randint(0, 10000)  # Ensure same augmentation for both
-    #             torch.manual_seed(seed)
-    #             image = self.augmentations(image)
-    #             torch.manual_seed(seed)
-    #             mask = self.augmentations(mask)
     def __getitem__(self, idx):
         img_path = os.path.join(self.image_dir, self.image_filenames[idx])
         mask_path = os.path.join(self.mask_dir, self.mask_filenames[idx])
@@ -85,33 +44,34 @@ class SatelliteSegmentationDataset(Dataset):
 
         try:
             with rasterio.open(img_path) as src:
-                blue = src.read(2)
-                green = src.read(3)
-                red = src.read(4)
-                nir = src.read(5)
+                blue = normalize_band(src.read(2))
+                green = normalize_band(src.read(3))
+                red = normalize_band(src.read(4))
+                nir = normalize_band(src.read(5))
 
                 image = np.stack([red, green, blue, nir], axis=-1).astype(np.float32)
-                min_vals = image.min(axis=(0, 1), keepdims=True)
-                max_vals = image.max(axis=(0, 1), keepdims=True)
-                image = (image - min_vals) / (max_vals - min_vals)
+                # min_vals = image.min(axis=(0, 1), keepdims=True)
+                # max_vals = image.max(axis=(0, 1), keepdims=True)
+                # image = (image - min_vals) / (max_vals - min_vals)
 
             with rasterio.open(mask_path) as src:
                 label = src.read().astype(np.int8)
 
-                # cloud = ((label == 5) | (label == 0) | (label == 1)).astype(np.int8)
-                # water = ((label == 2) | (label == 6)).astype(np.int8)
-                # land = (label == 4).astype(np.int8)
-                # snow = (label == 3).astype(np.int8)
+                # cloud_shadow = ((label == 0) | (label == 1)).astype(np.int8)
+                cloud = ((label == 5)).astype(np.int8)
+                water = ((label == 2) | (label == 6) | (label == 1)).astype(np.int8)
+                land = ((label == 4) | (label == 0)).astype(np.int8)
+                snow = (label == 3).astype(np.int8)
 
-                # mask = np.stack([cloud, water, land, snow], axis=0)  # Fix concatenation issue
-                # mask = np.squeeze(mask)
-
-                cloud = (5*(label == 5)).astype(np.uint8)
-                not_cloud = (5*(label != 5)).astype(np.uint8)
-
-                mask = np.stack([cloud, not_cloud])
-
+                mask = np.stack([cloud, water, land, snow], axis=0)  # Fix concatenation issue
                 mask = mask.squeeze()
+
+                # cloud = (label == 5).astype(np.uint8)
+                # not_cloud = (label != 5).astype(np.uint8)
+
+                # mask = np.stack([cloud, not_cloud])
+
+                # mask = mask.squeeze()
 
 
                 
@@ -125,7 +85,6 @@ class SatelliteSegmentationDataset(Dataset):
                 image = self.augmentations(image)
                 torch.manual_seed(seed)
                 mask = self.augmentations(mask)
-
                 mask = torch.argmax(mask, dim=0)
 
 
